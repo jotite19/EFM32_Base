@@ -57,6 +57,15 @@ static void LedBlink(void *pParameters)
   }
 }
 
+static void checkup(void *pParameters)
+{
+  for (;; ) {
+    //TODO
+	I2C_Test();
+    vTaskDelay(500);
+  }
+}
+
 /***************************************************************************//**
  * @brief  Main function
  ******************************************************************************/

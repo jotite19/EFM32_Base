@@ -110,7 +110,7 @@ bool I2C_Test() {
 	xSemaphoreTake(semaphore, portMAX_DELAY);
 	uint8_t data;
 
-	I2C_ReadRegister(0xD0, &data);
+	I2C_ReadRegister(0x80, &data);
 
 	printf("I2C: %02X\n", data);
 
