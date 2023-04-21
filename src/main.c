@@ -73,6 +73,8 @@ int main(void)
   BSP_LedSet(0);
   BSP_LedSet(1);
 
+
+  BSP_I2C_Init (0x39);
   /* Initialize SLEEP driver, no calbacks are used */
   SLEEP_Init(NULL, NULL);
 #if (configSLEEP_MODE < 3)
