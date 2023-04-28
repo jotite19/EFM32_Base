@@ -14,9 +14,20 @@
 #include "em_gpio.h"
 #include "em_cmu.h"
 
+#include "funBase.h"
+
 
 static uint8_t device_addr;
 SemaphoreHandle_t semaphore = NULL;
+
+//Print f:
+int _write(int file, const char *ptr, int len) {
+    int x;
+    for (x = 0; x < len; x++) {
+       ITM_SendChar (*ptr++);
+    }
+    return (len);
+}
 
 void BSP_I2C_Init(uint8_t addr) {
 
@@ -29,6 +40,7 @@ void BSP_I2C_Init(uint8_t addr) {
 	I2C_Init(I2C1, &i2cInit);
 
 	semaphore = xSemaphoreCreateBinary();
+	xSemaphoreGive(semaphore);
 	device_addr = addr;
 }
 
@@ -107,18 +119,31 @@ bool I2C_ReadRegister(uint8_t reg, uint8_t *val) {
 }
 
 bool I2C_Test() {
-	xSemaphoreTake(semaphore, portMAX_DELAY);
+
+	printf("test\n");
 	uint8_t data;
 
-	I2C_ReadRegister(0x80, &data);
+	I2C_ReadRegister(0x92, &data);
 
-	printf("I2C: %02X\n", data);
+	printf("I2C: %02X \n", data);
 
-	if (data == 0x60) {
+	if (data == 0xAB) {
 		return true;
 	} else {
 		return false;
 	}
-	xSemaphoreGive(semaphore);
+}
 
+void test(){
+	printf("test\n");
+}
+
+void sensorInit() {
+	uint8_t data;
+
+	I2C_WriteRegister(0x92, 0x05); 	//0000 0101 -> 05
+	I2C_WriteRegister(0x8E, 0x48);	//0100 1000 -> 48
+	I2C_ReadRegister(0x9C, &data);
+
+	printf("I2C: %02X \n", data);
 }

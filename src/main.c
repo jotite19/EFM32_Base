@@ -31,6 +31,8 @@
 
 #include "sleep.h"
 
+#include "funBase.h"
+
 #define STACK_SIZE_FOR_TASK    (configMINIMAL_STACK_SIZE + 10)
 #define TASK_PRIORITY          (tskIDLE_PRIORITY + 1)
 
@@ -57,12 +59,13 @@ static void LedBlink(void *pParameters)
   }
 }
 
-static void checkup(void *pParameters)
+static void TestTask(void *pParameters)
 {
+  TaskParams_t     * pData = (TaskParams_t*) pParameters;
+  const portTickType delay = pData->delay;
   for (;; ) {
-    //TODO
-	I2C_Test();
-    vTaskDelay(500);
+	sensorInit();
+    vTaskDelay(delay);
   }
 }
 
@@ -83,7 +86,8 @@ int main(void)
   BSP_LedSet(1);
 
 
-  BSP_I2C_Init (0x39);
+  BSP_I2C_Init (0x39 << 1);
+
   /* Initialize SLEEP driver, no calbacks are used */
   SLEEP_Init(NULL, NULL);
 #if (configSLEEP_MODE < 3)
@@ -94,10 +98,12 @@ int main(void)
   /* Parameters value for taks*/
   static TaskParams_t parametersToTask1 = { pdMS_TO_TICKS(1000), 0 };
   static TaskParams_t parametersToTask2 = { pdMS_TO_TICKS(500), 1 };
+  static TaskParams_t parametersToTask3 = { pdMS_TO_TICKS(500), 2 };
 
   /*Create two task for blinking leds*/
   xTaskCreate(LedBlink, (const char *) "LedBlink1", STACK_SIZE_FOR_TASK, &parametersToTask1, TASK_PRIORITY, NULL);
   xTaskCreate(LedBlink, (const char *) "LedBlink2", STACK_SIZE_FOR_TASK, &parametersToTask2, TASK_PRIORITY, NULL);
+  xTaskCreate(TestTask, (const char *) "TestTask", STACK_SIZE_FOR_TASK, &parametersToTask3, TASK_PRIORITY, NULL);
 
   /*Start FreeRTOS Scheduler*/
   vTaskStartScheduler();
