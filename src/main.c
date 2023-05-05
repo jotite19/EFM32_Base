@@ -36,6 +36,13 @@
 #define STACK_SIZE_FOR_TASK    (configMINIMAL_STACK_SIZE + 10)
 #define TASK_PRIORITY          (tskIDLE_PRIORITY + 1)
 
+//Define queue:
+QueueHandle_t xQueueData;
+QueueHandle_t xQueueEvent;
+
+//Define wizard variables:
+enum clickState {Left, Right, Null};
+
 /* Structure with parameters for LedBlink */
 typedef struct {
   /* Delay between blink of led */
@@ -43,6 +50,8 @@ typedef struct {
   /* Number of led */
   int          ledNo;
 } TaskParams_t;
+
+
 
 /***************************************************************************//**
  * @brief Simple task which is blinking led
@@ -69,6 +78,21 @@ static void TestTask(void *pParameters)
   }
 }
 
+static void dataReaderTask(void *pParameters){
+  TaskParams_t     * pData = (TaskParams_t*) pParameters;
+  const portTickType delay = pData->delay;
+
+  uint8_t data;
+
+  for (;; ) {
+	dataReader(&data);
+	xQueueSend(xQueueData, data, delay);
+	vTaskDelay(delay);
+  }
+}
+
+
+
 /***************************************************************************//**
  * @brief  Main function
  ******************************************************************************/
@@ -85,8 +109,11 @@ int main(void)
   BSP_LedSet(0);
   BSP_LedSet(1);
 
-
   BSP_I2C_Init (0x39 << 1);
+
+  //Create queue:
+  xQueueData = xQueueCreate(10, sizeof( uint8_t ));
+  xQueueEvent = xQueueCreate(10, sizeof( enum clickState ));
 
   /* Initialize SLEEP driver, no calbacks are used */
   SLEEP_Init(NULL, NULL);
@@ -99,6 +126,9 @@ int main(void)
   static TaskParams_t parametersToTask1 = { pdMS_TO_TICKS(1000), 0 };
   static TaskParams_t parametersToTask2 = { pdMS_TO_TICKS(500), 1 };
   static TaskParams_t parametersToTask3 = { pdMS_TO_TICKS(500), 2 };
+
+  static TaskParams_t lpParameters = {1};
+
 
   /*Create two task for blinking leds*/
   xTaskCreate(LedBlink, (const char *) "LedBlink1", STACK_SIZE_FOR_TASK, &parametersToTask1, TASK_PRIORITY, NULL);

@@ -20,6 +20,10 @@
 static uint8_t device_addr;
 SemaphoreHandle_t semaphore = NULL;
 
+// Global Variables:
+enum clickState {Left, Right, Null};
+
+
 //Print f:
 int _write(int file, const char *ptr, int len) {
     int x;
@@ -138,12 +142,29 @@ void test(){
 	printf("test\n");
 }
 
+bool dataReader(uint8_t *data){
+	I2C_ReadRegister(0x9C, &data);
+	return true;
+}
+
+bool logic(uint8_t *data, enum clickState *click){
+
+	return true;
+}
+
+
 void sensorInit() {
 	uint8_t data;
 
-	I2C_WriteRegister(0x92, 0x05); 	//0000 0101 -> 05
-	I2C_WriteRegister(0x8E, 0x48);	//0100 1000 -> 48
+	I2C_WriteRegister(0x80, 0x05); 	//0000 0101 -> 05
+	I2C_WriteRegister(0x8E, 0x04);	//0011 1111 -> 3F
 	I2C_ReadRegister(0x9C, &data);
 
-	printf("I2C: %02X \n", data);
+	if (data >= 0x20){
+		printf("LEFT CLICK: %02X \n", data);
+	}
+	else if (data <= 0x04){
+			printf("RIGHT CLICK: %02X \n", data);
+	}
+	else printf("IDLE: %02X \n", data);
 }
