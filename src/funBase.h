@@ -16,8 +16,10 @@ bool I2C_WriteRegister(uint8_t reg, uint8_t data);
 bool I2C_ReadRegister(uint8_t reg, uint8_t *val);
 
 bool I2C_Test();
-void test();
 
 void sensorInit();
+void dataRead(uint8_t *data);
+void logic(uint8_t data, uint8_t *event);
+void output(uint8_t event);
 
 #endif /* SRC_FUNBASE_H_ */

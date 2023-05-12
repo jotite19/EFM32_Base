@@ -122,49 +122,36 @@ bool I2C_ReadRegister(uint8_t reg, uint8_t *val) {
 	return true;
 }
 
-bool I2C_Test() {
-
-	printf("test\n");
-	uint8_t data;
-
-	I2C_ReadRegister(0x92, &data);
-
-	printf("I2C: %02X \n", data);
-
-	if (data == 0xAB) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-void test(){
-	printf("test\n");
-}
-
-bool dataReader(uint8_t *data){
-	I2C_ReadRegister(0x9C, &data);
-	return true;
-}
-
-bool logic(uint8_t *data, enum clickState *click){
-
-	return true;
-}
-
 
 void sensorInit() {
-	uint8_t data;
-
 	I2C_WriteRegister(0x80, 0x05); 	//0000 0101 -> 05
 	I2C_WriteRegister(0x8E, 0x04);	//0011 1111 -> 3F
-	I2C_ReadRegister(0x9C, &data);
+}
 
-	if (data >= 0x20){
-		printf("LEFT CLICK: %02X \n", data);
+void dataRead(uint8_t *data){
+	sensorInit();
+	I2C_ReadRegister(0x9C, data);
+	//printf("Read: %02X \n", *data);
+}
+
+void logic(uint8_t data, uint8_t *event){
+	//printf("Event data: %02X \n", data);
+	if (data >= 0x30){
+		*event = 0x01; 				// Left
 	}
-	else if (data <= 0x04){
-			printf("RIGHT CLICK: %02X \n", data);
+	else if (data <= 0x10 && data >= 0x03){
+		*event = 0x02;				// Right
 	}
-	else printf("IDLE: %02X \n", data);
+	else {
+		*event = 0x00;				// Idle
+	}
+}
+
+void output(uint8_t event){
+	if (event == 0x01){
+		printf("LEFT CLICK\n\n");
+	}
+	else if (event == 0x02){
+		printf("RIGHT CLICK\n\n");
+	}
 }

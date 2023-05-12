@@ -68,16 +68,6 @@ static void LedBlink(void *pParameters)
   }
 }
 
-static void TestTask(void *pParameters)
-{
-  TaskParams_t     * pData = (TaskParams_t*) pParameters;
-  const portTickType delay = pData->delay;
-  for (;; ) {
-	sensorInit();
-    vTaskDelay(delay);
-  }
-}
-
 static void dataReaderTask(void *pParameters){
   TaskParams_t     * pData = (TaskParams_t*) pParameters;
   const portTickType delay = pData->delay;
@@ -85,13 +75,42 @@ static void dataReaderTask(void *pParameters){
   uint8_t data;
 
   for (;; ) {
-	dataReader(&data);
-	xQueueSend(xQueueData, data, delay);
+	dataRead(&data);
+	//printf("Read Data: %02X \n", data);
+	xQueueSend(xQueueData, &data, portMAX_DELAY);
 	vTaskDelay(delay);
   }
 }
 
+static void dataProcessTask(void *pParameters){
+  TaskParams_t     * pData = (TaskParams_t*) pParameters;
+  const portTickType delay = pData->delay;
 
+  uint8_t data;
+  uint8_t event;
+
+  for (;; ) {
+	xQueueReceive(xQueueData, &data, portMAX_DELAY);
+	logic(data, &event);
+	//printf("Processed Data: %02X \n", data);
+	//printf("Event: %02X \n", event);
+	xQueueSend(xQueueEvent, &event, portMAX_DELAY);
+	vTaskDelay(delay);
+  }
+}
+
+static void OutputTask(void *pParameters){
+  TaskParams_t     * pData = (TaskParams_t*) pParameters;
+  const portTickType delay = pData->delay;
+
+  uint8_t event;
+
+  for (;; ) {
+	xQueueReceive(xQueueEvent, &event, portMAX_DELAY);
+	output(event);
+	vTaskDelay(delay);
+  }
+}
 
 /***************************************************************************//**
  * @brief  Main function
@@ -127,13 +146,13 @@ int main(void)
   static TaskParams_t parametersToTask2 = { pdMS_TO_TICKS(500), 1 };
   static TaskParams_t parametersToTask3 = { pdMS_TO_TICKS(500), 2 };
 
-  static TaskParams_t lpParameters = {1};
-
 
   /*Create two task for blinking leds*/
   xTaskCreate(LedBlink, (const char *) "LedBlink1", STACK_SIZE_FOR_TASK, &parametersToTask1, TASK_PRIORITY, NULL);
   xTaskCreate(LedBlink, (const char *) "LedBlink2", STACK_SIZE_FOR_TASK, &parametersToTask2, TASK_PRIORITY, NULL);
-  xTaskCreate(TestTask, (const char *) "TestTask", STACK_SIZE_FOR_TASK, &parametersToTask3, TASK_PRIORITY, NULL);
+  xTaskCreate(dataReaderTask, (const char *) "dataReaderTask", STACK_SIZE_FOR_TASK, &parametersToTask3, TASK_PRIORITY, NULL);
+  xTaskCreate(dataProcessTask, (const char *) "dataProcessTask", STACK_SIZE_FOR_TASK, &parametersToTask3, TASK_PRIORITY, NULL);
+  xTaskCreate(OutputTask, (const char *) "OutputTask", STACK_SIZE_FOR_TASK, &parametersToTask3, TASK_PRIORITY, NULL);
 
   /*Start FreeRTOS Scheduler*/
   vTaskStartScheduler();
